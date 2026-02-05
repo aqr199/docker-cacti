@@ -1,0 +1,59 @@
+
+services:
+  cacti:
+    build: .
+    container_name: test-cacti-app
+#    ports:
+#      - "8091:80"
+    environment:
+      # 30s, 1m, 5m
+      - POLLER_INTERVAL=1m
+      - TZ=Asia/Taipei
+      - DB_HOST=cacti-db
+      - DB_USER=cactiuser
+      - DB_PASS=cactipassword
+      - DB_NAME=cacti
+    volumes:
+      - cacti_rra:/var/www/localhost/htdocs/cacti/rra
+      - cacti_log:/var/www/localhost/htdocs/cacti/log
+    depends_on:
+      - cacti-db
+    networks:
+      network_pc:
+        ipv4_address: 192.168.9.250
+
+  cacti-db:
+#    image: mariadb:10.11
+    image: mariadb:12.1.2
+    container_name: test-cacti-db
+    environment:
+      - TZ=Asia/Taipei
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=cacti
+      - MYSQL_USER=cactiuser
+      - MYSQL_PASSWORD=cactipassword
+    volumes:
+      - db_data:/var/lib/mysql
+    command: [
+      "mariadbd",
+      "--ssl=OFF",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+      "--innodb_doublewrite=OFF",
+      "--max_allowed_packet=16M",
+      "--tmp_table_size=512M",
+      "--max_heap_table_size=512M",
+      "--innodb_buffer_pool_size=8G", # 這裡根據你主機實際記憶體調整，建議設為總 RAM 的 25%
+      "--innodb_flush_log_at_trx_commit=2",
+      "--innodb_lock_wait_timeout=50"
+    ]
+    networks:
+      - network_pc
+networks:
+  network_pc:
+    external: true
+volumes:
+  cacti_rra:
+  cacti_log:
+  db_data:
+
